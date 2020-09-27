@@ -29,7 +29,7 @@ export class Installer implements InstallerOptions {
   readonly filename: (version: string) => string
   readonly downloadedFile: (version: string) => string
   readonly cache: boolean
-  readonly installFn?: (filepath: string) => void
+  #installFn?: (filepath: string) => void
 
   constructor({
     downloadURL,
@@ -42,14 +42,16 @@ export class Installer implements InstallerOptions {
     this.downloadDirectory = downloadDirectory
     this.filename = filename
     this.downloadedFile = (version) =>
-      path.join(this.downloadDirectory, this.filename(version))
+      Deno.realPathSync(
+        path.join(this.downloadDirectory, this.filename(version))
+      )
     this.cache = cache
-    this.installFn = installFn
+    this.#installFn = installFn
   }
 
   async download(version: string) {
     const file = this.downloadedFile(version)
-    fmt.printf('Previously downloaded?...')
+    fmt.printf('previously downloaded? ...')
     if (this.cache && (await exists(file))) {
       fmt.printf(' yes\n')
       return file
@@ -57,11 +59,11 @@ export class Installer implements InstallerOptions {
     fmt.printf(' no\n')
 
     const url = this.downloadURL(version)
-    fmt.printf(`Downloading ${url}...`)
+    fmt.printf(`downloading ${url} ...`)
     try {
       const response = await fetch(url)
       fmt.printf(' done\n')
-      fmt.printf(`Writing to ${file}...`)
+      fmt.printf(`writing to ${file} ...`)
       const buf = await response.arrayBuffer()
       const data = new Uint8Array(buf)
       await Deno.writeFile(file, data)
@@ -73,22 +75,22 @@ export class Installer implements InstallerOptions {
   }
 
   async install(version: string, download = true) {
-    if (!this.installFn) {
-      throw new Error('installFn undefined!')
+    if (!this.#installFn) {
+      throw new Error('installFn undefined')
     }
 
     const previousFile = this.downloadedFile(version)
     if (await exists(previousFile)) {
-      return this.installFn(previousFile)
+      return this.#installFn(previousFile)
     } else if (!download) {
-      throw new Error(`${version} could not be found!`)
+      throw new Error(`${version} could not be found`)
     }
 
     const downloadedFile = await this.download(version)
     if (downloadedFile) {
-      return this.installFn(downloadedFile)
+      return this.#installFn(downloadedFile)
     }
 
-    throw new Error(`Could not download and install ${version}!`)
+    throw new Error(`could not download and install ${version}`)
   }
 }
