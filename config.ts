@@ -6,6 +6,7 @@ interface Config {
     | {
         downloadURLFmt?: string
         filenameFmt?: string
+        installFn?: string
       }
     | undefined
 }

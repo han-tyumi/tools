@@ -1,1 +1,1 @@
-export { Installer, InstallerOptions } from './installer.ts'
+export type { Installer, InstallerOptions } from './installer.ts'

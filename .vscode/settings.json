@@ -4,6 +4,8 @@
     "https://deno.land": true
   },
   "conventionalCommits.scopes": [
-    "installer"
+    "installer",
+    "code",
+    "cli"
   ]
 }

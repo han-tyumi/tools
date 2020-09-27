@@ -1,6 +1,6 @@
 scripts:
   start:
-    cmd: mod.ts
+    cmd: cli.ts
     unstable: true
     allow:
       - all

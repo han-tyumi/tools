@@ -1,5 +1,5 @@
 import { Command, HelpCommand, CompletionsCommand, fmt } from './deps.ts'
-import { Installer } from './installer.ts'
+import { Installer, InstallerOptions } from './installer.ts'
 import { getConfig } from './config.ts'
 
 if (import.meta.main) {
@@ -17,20 +17,20 @@ if (import.meta.main) {
     )
     .option(
       '--cache [cache:boolean]',
-      'Whether to use already downloaded files',
+      'whether to use already downloaded files',
       { default: true }
     )
     .action(
       async ({ cache }: { cache: boolean }, tool: string, version: string) => {
         const toolConfig = config[tool]
         if (!toolConfig) {
-          throw new Error(`Configuration for ${tool} not found!`)
+          throw new Error(`configuration for ${tool} not found`)
         }
 
         const { downloadURLFmt, filenameFmt } = toolConfig
         if (!(downloadURLFmt && filenameFmt)) {
           throw new Error(
-            `downloadURLFmt and/or filenameFmt not defined for ${tool}!`
+            `downloadURLFmt and/or filenameFmt not defined for ${tool}`
           )
         }
 
@@ -41,6 +41,56 @@ if (import.meta.main) {
         })
 
         installer.download(version)
+      }
+    )
+
+    .command(
+      'install <tool:string:tool> <version:string>',
+      'installs the specified tool version'
+    )
+    .option(
+      '--offline [offline:boolean]',
+      'whether to download a version if not found',
+      { default: false }
+    )
+    .action(
+      async (
+        { offline }: { offline: boolean },
+        tool: string,
+        version: string
+      ) => {
+        const toolConfig = config[tool]
+        if (!toolConfig) {
+          throw new Error(`configuration for ${tool} not found`)
+        }
+
+        const { filenameFmt, installFn } = toolConfig
+        if (!(filenameFmt && installFn)) {
+          throw new Error(
+            `filenameFmt and/or installFn not defined for ${tool}`
+          )
+        }
+
+        const install = (await import(installFn)).default
+        if (typeof install !== 'function') {
+          throw new Error('installFn is not a function')
+        }
+
+        const installerOptions: InstallerOptions = {
+          filename: (version) => fmt.sprintf(filenameFmt, version),
+          cache: !offline,
+          installFn: install,
+        }
+
+        const downloadURLFmt = toolConfig.downloadURLFmt
+        if (!offline && downloadURLFmt) {
+          installerOptions.downloadURL = (version) =>
+            fmt.sprintf(downloadURLFmt, version)
+        }
+
+        const installer = new Installer(installerOptions)
+
+        installer.install(version)
       }
     )
 
