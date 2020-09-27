@@ -1,5 +1,5 @@
-import { existsSync, fmt, moveSync, path } from '../deps.ts'
-import { untar } from '../utils.ts'
+import { existsSync, fmt, moveSync, path } from '../../deps.ts'
+import { untar } from '../../src/utils.ts'
 
 const installDir = '/home/sketches/vscode'
 const dataDir = path.join(installDir, 'data')

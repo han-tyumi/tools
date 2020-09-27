@@ -1,1 +1,2 @@
-export type { Installer, InstallerOptions } from './installer.ts'
+export { Installer } from './src/installer.ts'
+export { untar } from './src/utils.ts'

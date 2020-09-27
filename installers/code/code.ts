@@ -1,4 +1,4 @@
-import { Installer } from '../installer.ts'
+import { Installer } from '../../src/installer.ts'
 
 import installFn from './code.install.ts'
 

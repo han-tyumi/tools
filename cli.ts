@@ -1,6 +1,6 @@
 import { Command, HelpCommand, CompletionsCommand, fmt } from './deps.ts'
-import { Installer, InstallerOptions } from './installer.ts'
-import { getConfig } from './config.ts'
+import { Installer, InstallerOptions } from './src/installer.ts'
+import { getConfig } from './src/config.ts'
 
 if (import.meta.main) {
   const config = (await getConfig()) || {}

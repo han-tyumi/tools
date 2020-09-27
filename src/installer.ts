@@ -1,4 +1,4 @@
-import { existsSync, fmt, path } from './deps.ts'
+import { existsSync, fmt, path } from '../deps.ts'
 
 export interface InstallerOptions {
   /** The filename to be used for downloaded tool versions. */

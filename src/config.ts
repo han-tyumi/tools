@@ -1,4 +1,4 @@
-import { parse, path, existsSync } from './deps.ts'
+import { parse, path, existsSync } from '../deps.ts'
 import { mainDir } from './utils.ts'
 
 interface Config {
