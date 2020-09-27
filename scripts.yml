@@ -1,0 +1,6 @@
+scripts:
+  start:
+    cmd: mod.ts
+    unstable: true
+    allow:
+      - all

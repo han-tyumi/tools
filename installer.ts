@@ -1,13 +1,25 @@
 import { exists, fmt, path } from './deps.ts'
-import { mainDir } from './mod.ts'
 
 export interface InstallerOptions {
+  /** The URL to download a tool from when given a version. */
   downloadURL: (version: string) => string
+
+  /**
+   * The directory to store downloaded tool versions.
+   * This can absolute or relative to the current working directory.
+   */
   downloadDirectory?: string
+
+  /** The filename to be used for downloaded tool versions. */
   filename: (version: string) => string
+
+  /** Whether or not to reuse already downloaded tools (defaults to true). */
   cache?: boolean
 }
 
+/**
+ * Installer helps with the download and installation of tools.
+ */
 export class Installer implements InstallerOptions {
   readonly downloadURL: (version: string) => string
   readonly downloadDirectory: string
@@ -22,9 +34,7 @@ export class Installer implements InstallerOptions {
     cache = true,
   }: InstallerOptions) {
     this.downloadURL = downloadURL
-    this.downloadDirectory = path.isAbsolute(downloadDirectory)
-      ? downloadDirectory
-      : path.join(mainDir, downloadDirectory)
+    this.downloadDirectory = downloadDirectory
     this.filename = filename
     this.downloadedFile = (version) =>
       path.join(this.downloadDirectory, this.filename(version))
