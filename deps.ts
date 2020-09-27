@@ -1,6 +1,6 @@
 export { parse } from 'https://deno.land/std@0.71.0/encoding/yaml.ts'
 export * as fmt from 'https://deno.land/std@0.71.0/fmt/printf.ts'
-export { exists, move } from 'https://deno.land/std@0.71.0/fs/mod.ts'
+export { existsSync, moveSync } from 'https://deno.land/std@0.71.0/fs/mod.ts'
 export * as path from 'https://deno.land/std@0.71.0/path/mod.ts'
 export {
   Command,

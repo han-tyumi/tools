@@ -1,4 +1,4 @@
-import { parse, path, exists } from './deps.ts'
+import { parse, path, existsSync } from './deps.ts'
 import { mainDir } from './utils.ts'
 
 interface Config {
@@ -28,8 +28,8 @@ export async function getConfig() {
   for (const dir of dirs) {
     for (const filename of filenames) {
       const configPath = path.join(dir, filename)
-      if (await exists(configPath)) {
-        const yaml = await Deno.readTextFile(configPath)
+      if (existsSync(configPath)) {
+        const yaml = Deno.readTextFileSync(configPath)
         return (await parse(yaml)) as Config
       }
     }

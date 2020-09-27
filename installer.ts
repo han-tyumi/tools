@@ -1,4 +1,4 @@
-import { exists, fmt, path } from './deps.ts'
+import { existsSync, fmt, path } from './deps.ts'
 
 export interface InstallerOptions {
   /** The filename to be used for downloaded tool versions. */
@@ -50,7 +50,7 @@ export class Installer implements InstallerOptions {
   async download(version: string) {
     const file = this.downloadedFile(version)
     fmt.printf('previously downloaded? ...')
-    if (this.cache && (await exists(file))) {
+    if (this.cache && existsSync(file)) {
       fmt.printf(' yes\n')
       return file
     }
@@ -65,9 +65,9 @@ export class Installer implements InstallerOptions {
     const response = await fetch(url)
     fmt.printf(' done\n')
     fmt.printf(`writing to ${file} ...`)
-    const buf = await response.arrayBuffer()
-    const data = new Uint8Array(buf)
-    await Deno.writeFile(file, data)
+    const buffer = await response.arrayBuffer()
+    const data = new Uint8Array(buffer)
+    Deno.writeFileSync(file, data)
     fmt.printf(' done\n')
     return file
   }
@@ -78,7 +78,7 @@ export class Installer implements InstallerOptions {
     }
 
     const previousFile = this.downloadedFile(version)
-    if (await exists(previousFile)) {
+    if (existsSync(previousFile)) {
       return this.#installFn(previousFile)
     } else if (!download) {
       throw new Error(`${version} could not be found`)
