@@ -1,4 +1,4 @@
-import { Command, HelpCommand, CompletionsCommand, path, fmt } from './deps.ts'
+import { Command, HelpCommand, CompletionsCommand, fmt } from './deps.ts'
 import { Installer } from './installer.ts'
 import { getConfig } from './config.ts'
 

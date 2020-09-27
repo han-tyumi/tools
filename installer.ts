@@ -15,6 +15,9 @@ export interface InstallerOptions {
 
   /** Whether or not to reuse already downloaded tools (defaults to true). */
   cache?: boolean
+
+  /** Function called with the path to the downloaded tool file to install. */
+  installFn?: (filepath: string) => void
 }
 
 /**
@@ -26,12 +29,14 @@ export class Installer implements InstallerOptions {
   readonly filename: (version: string) => string
   readonly downloadedFile: (version: string) => string
   readonly cache: boolean
+  readonly installFn?: (filepath: string) => void
 
   constructor({
     downloadURL,
     downloadDirectory = '',
     filename,
     cache = true,
+    installFn,
   }: InstallerOptions) {
     this.downloadURL = downloadURL
     this.downloadDirectory = downloadDirectory
@@ -39,6 +44,7 @@ export class Installer implements InstallerOptions {
     this.downloadedFile = (version) =>
       path.join(this.downloadDirectory, this.filename(version))
     this.cache = cache
+    this.installFn = installFn
   }
 
   async download(version: string) {
@@ -64,5 +70,25 @@ export class Installer implements InstallerOptions {
     } catch (error) {
       console.log(error)
     }
+  }
+
+  async install(version: string, download = true) {
+    if (!this.installFn) {
+      throw new Error('installFn undefined!')
+    }
+
+    const previousFile = this.downloadedFile(version)
+    if (await exists(previousFile)) {
+      return this.installFn(previousFile)
+    } else if (!download) {
+      throw new Error(`${version} could not be found!`)
+    }
+
+    const downloadedFile = await this.download(version)
+    if (downloadedFile) {
+      return this.installFn(downloadedFile)
+    }
+
+    throw new Error(`Could not download and install ${version}!`)
   }
 }
