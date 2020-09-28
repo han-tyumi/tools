@@ -6,6 +6,8 @@ interface DownloadCommandOptions {
   cache: boolean
 }
 
+const config = (await getConfig()) || {}
+
 export const downloadCommand = new Command()
   .arguments('<tool:string:tool> <version:string>')
   .description('downloads the specified tool version')
@@ -20,7 +22,7 @@ export const downloadCommand = new Command()
       tool: string,
       version: string
     ) => {
-      const toolConfig = (await getConfig())[tool]
+      const toolConfig = config[tool]
       if (!toolConfig) {
         throw new Error(`configuration for ${tool} not found`)
       }

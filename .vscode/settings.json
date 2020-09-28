@@ -1,11 +1,5 @@
 {
   "deno.enable": true,
-  "deno.import_intellisense_origins": {
-    "https://deno.land": true
-  },
-  "conventionalCommits.scopes": [
-    "installer",
-    "code",
-    "cli"
-  ]
+  "conventionalCommits.scopes": ["installer", "code", "cli", "config"],
+  "deno.import_intellisense_autodiscovery": false
 }

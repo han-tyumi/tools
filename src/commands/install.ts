@@ -6,6 +6,8 @@ interface InstallCommandOptions {
   offline: boolean
 }
 
+const config = (await getConfig()) || {}
+
 export const installCommand = new Command()
   .arguments('<tool:string:tool> <version:string>')
   .description('installs the specified tool version')
@@ -20,7 +22,7 @@ export const installCommand = new Command()
       tool: string,
       version: string
     ) => {
-      const toolConfig = (await getConfig())[tool]
+      const toolConfig = config[tool]
       if (!toolConfig) {
         throw new Error(`configuration for ${tool} not found`)
       }

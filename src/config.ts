@@ -34,14 +34,28 @@ export async function getConfig(cache = true) {
 
   for (const dir of dirs) {
     for (const filename of filenames) {
-      const configPath = path.join(dir, filename)
-      if (existsSync(configPath)) {
-        const yaml = Deno.readTextFileSync(configPath)
-        config = (await parse(yaml)) as Config
-        return config
+      const file = path.join(dir, filename)
+      if (!existsSync(file)) {
+        continue
       }
+
+      const yaml = Deno.readTextFileSync(file)
+      const parsedConfig = (await parse(yaml)) as Config
+
+      config = {}
+      for (const [tool, toolConfig] of Object.entries(parsedConfig)) {
+        const { downloadURLFmt, filenameFmt, installFn } = toolConfig!
+        config[tool] = {
+          downloadURLFmt,
+          filenameFmt,
+          installFn:
+            installFn &&
+            (path.isAbsolute(installFn)
+              ? installFn
+              : path.join(dir, installFn)),
+        }
+      }
+      return config
     }
   }
-
-  return {}
 }
