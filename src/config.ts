@@ -1,5 +1,5 @@
 import { parse, path, existsSync } from '../deps.ts'
-import { mainDir } from './utils.ts'
+import { homeDir, mainDir } from './utils.ts'
 
 interface Config {
   [tool: string]:
@@ -14,9 +14,8 @@ interface Config {
 let config: Config | undefined
 
 // construct array of directories to search
-const home = Deno.env.get(Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME')
 const dirs = [Deno.cwd()]
-home && dirs.push(home)
+homeDir && dirs.push(homeDir)
 dirs.push(mainDir)
 
 const basename = 'tools'

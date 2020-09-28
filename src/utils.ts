@@ -1,6 +1,8 @@
 import { path } from '../deps.ts'
 
 export const mainDir = path.dirname(path.fromFileUrl(Deno.mainModule))
+export const homeDir =
+  Deno.env.get(Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME') || ''
 
 export interface UntarOptions extends Omit<Deno.RunOptions, 'cmd'> {
   compression?: 'a' | 'j' | 'J' | 'z' | 'Z'

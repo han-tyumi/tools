@@ -1,7 +1,7 @@
 import { existsSync, fmt, moveSync, path } from '../../deps.ts'
-import { untar } from '../../src/utils.ts'
+import { homeDir, untar } from '../../src/utils.ts'
 
-const installDir = '/home/sketches/vscode'
+const installDir = path.join(homeDir, 'vscode')
 const dataDir = path.join(installDir, 'data')
 
 export async function install(filepath: string) {
