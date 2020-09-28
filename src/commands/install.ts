@@ -32,9 +32,11 @@ export const installCommand = new Command()
         throw new Error(`filenameFmt and/or installFn not defined for ${tool}`)
       }
 
-      const install = (await import(installFn)).default
-      if (typeof install !== 'function') {
-        throw new Error('installFn is not a function')
+      const [file, name = 'default'] = installFn.split('#')
+      const install = (await import(file))[name]
+      const installType = typeof install
+      if (installType !== 'function') {
+        throw new Error(`${file} ${name} export is ${installType}`)
       }
 
       const installerOptions: InstallerOptions = {

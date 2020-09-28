@@ -4,7 +4,7 @@ import { untar } from '../../src/utils.ts'
 const installDir = '/home/sketches/vscode'
 const dataDir = path.join(installDir, 'data')
 
-export default async function installFn(filepath: string) {
+export async function install(filepath: string) {
   let tempDir: string | undefined
   if (existsSync(installDir)) {
     tempDir = Deno.makeTempDirSync()
