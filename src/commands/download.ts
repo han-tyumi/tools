@@ -1,6 +1,6 @@
 import { Command, fmt } from '../../deps.ts'
 import { getConfig } from '../config.ts'
-import { Installer } from '../installer.ts'
+import { Installer, InstallerOptions } from '../installer.ts'
 
 interface DownloadCommandOptions {
   cache: boolean
@@ -27,18 +27,25 @@ export const downloadCommand = new Command()
         throw new Error(`configuration for ${tool} not found`)
       }
 
-      const { downloadURLFmt, filenameFmt } = toolConfig
-      if (!(downloadURLFmt && filenameFmt)) {
-        throw new Error(
-          `downloadURLFmt and/or filenameFmt not defined for ${tool}`
-        )
+      let installerOptions: InstallerOptions
+      if (toolConfig.options) {
+        installerOptions = toolConfig.options
+      } else {
+        const { downloadURLFmt, filenameFmt } = toolConfig
+        if (!(downloadURLFmt && filenameFmt)) {
+          throw new Error(
+            `downloadURLFmt and/or filenameFmt not defined for ${tool}`
+          )
+        }
+
+        installerOptions = {
+          downloadURL: (version) => fmt.sprintf(downloadURLFmt, version),
+          filename: (version) => fmt.sprintf(filenameFmt, version),
+          cache,
+        }
       }
 
-      const installer = new Installer({
-        downloadURL: (version) => fmt.sprintf(downloadURLFmt, version),
-        filename: (version) => fmt.sprintf(filenameFmt, version),
-        cache,
-      })
+      const installer = new Installer(installerOptions)
 
       installer.download(version)
     }

@@ -27,28 +27,35 @@ export const installCommand = new Command()
         throw new Error(`configuration for ${tool} not found`)
       }
 
-      const { filenameFmt, installFn } = toolConfig
-      if (!(filenameFmt && installFn)) {
-        throw new Error(`filenameFmt and/or installFn not defined for ${tool}`)
-      }
+      let installerOptions: InstallerOptions
+      if (toolConfig.options) {
+        installerOptions = toolConfig.options
+      } else {
+        const { filenameFmt, installFn } = toolConfig
+        if (!(filenameFmt && installFn)) {
+          throw new Error(
+            `filenameFmt and/or installFn not defined for ${tool}`
+          )
+        }
 
-      const [file, name = 'default'] = installFn.split('#')
-      const install = (await import(file))[name]
-      const installType = typeof install
-      if (installType !== 'function') {
-        throw new Error(`${file} ${name} export is ${installType}`)
-      }
+        const [file, name = 'default'] = installFn.split('#')
+        const install = (await import(file))[name]
+        const installType = typeof install
+        if (installType !== 'function') {
+          throw new Error(`${file} ${name} export is ${installType}`)
+        }
 
-      const installerOptions: InstallerOptions = {
-        filename: (version) => fmt.sprintf(filenameFmt, version),
-        cache: !offline,
-        installFn: install,
-      }
+        installerOptions = {
+          filename: (version) => fmt.sprintf(filenameFmt, version),
+          cache: !offline,
+          installFn: install,
+        }
 
-      const downloadURLFmt = toolConfig.downloadURLFmt
-      if (!offline && downloadURLFmt) {
-        installerOptions.downloadURL = (version) =>
-          fmt.sprintf(downloadURLFmt, version)
+        const downloadURLFmt = toolConfig.downloadURLFmt
+        if (!offline && downloadURLFmt) {
+          installerOptions.downloadURL = (version) =>
+            fmt.sprintf(downloadURLFmt, version)
+        }
       }
 
       const installer = new Installer(installerOptions)
