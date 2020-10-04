@@ -253,6 +253,11 @@ export class Installer implements InstallerOptions {
     const url = this.downloadURL(version)
     fmt.printf(`downloading ${url} ...`)
     const response = await fetch(url)
+    if (response.status !== 200) {
+      throw new Error(
+        `${url} ${response.statusText.toLowerCase()} (${response.status})`
+      )
+    }
     fmt.printf(' done\n')
     fmt.printf(`writing to ${file} ...`)
     const buffer = await response.arrayBuffer()

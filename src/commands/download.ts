@@ -11,7 +11,13 @@ export const downloadCommand = new Command()
     async ({ tool, ...config }: DownloadCommandOptions, versions: string[]) => {
       const installer = await Installer.get(tool, config)
       for (const version of versions) {
-        await installer.download(version)
+        console.log()
+
+        try {
+          await installer.download(version)
+        } catch (error) {
+          console.error(`\n${error}`)
+        }
       }
     }
   )
