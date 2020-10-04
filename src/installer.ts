@@ -5,6 +5,9 @@ export interface InstallerOptions {
   /** The filename to be used for downloaded tool versions. */
   filename?: (version: string) => string
 
+  /** Returns the version for a given filename. */
+  version?: (filename: string) => string | undefined
+
   /** The URL to download a tool from when given a version. */
   downloadURL?: (version: string) => string
 
@@ -27,6 +30,11 @@ export interface InstallerConfig {
    * The first `%s` token will be replaced with the the downloaded tool's version.
    */
   filenameFmt?: string
+
+  /**
+   * Regex used to find a filename's version.
+   */
+  versionRegex?: string
 
   /**
    * The URL to download a tool from when given a version.
@@ -60,9 +68,10 @@ export class Installer implements InstallerOptions {
   private static _exts: InstallerConfigExt[] = ['yml', 'yaml', 'ts', 'js']
   private static _cache?: Promise<Map<string, InstallerOptions>>
 
+  readonly filename: (version: string) => string
+  readonly version: (filename: string) => string | undefined
   readonly downloadURL?: (version: string) => string
   readonly downloadDir: string
-  readonly filename: (version: string) => string
   readonly cache: boolean
 
   /** Path to a downloaded tool version. */
@@ -71,15 +80,17 @@ export class Installer implements InstallerOptions {
   #installFn?: (filepath: string) => void
 
   constructor({
+    filename = (version) => version,
+    version = (filename) => filename,
     downloadURL,
     downloadDir = '',
-    filename = (version) => version,
     cache = true,
     installFn,
   }: InstallerOptions) {
-    this.downloadURL = downloadURL
-    this.downloadDir = downloadDir
     this.filename = filename
+    this.version = version
+    this.downloadURL = downloadURL
+    this.downloadDir = path.resolve(downloadDir)
     this.downloadedFile = (version) =>
       path.resolve(path.join(this.downloadDir, this.filename(version)))
     this.cache = cache
@@ -184,6 +195,7 @@ export class Installer implements InstallerOptions {
   private static async _optionsFromConfig(
     {
       filenameFmt,
+      versionRegex,
       downloadURLFmt,
       downloadDir,
       cache,
@@ -195,10 +207,17 @@ export class Installer implements InstallerOptions {
     if (filenameFmt !== undefined) {
       options.filename = (version) => fmt.sprintf(filenameFmt, version)
     }
+    if (versionRegex !== undefined) {
+      options.version = (filename) => {
+        const matches = new RegExp(versionRegex).exec(filename)
+        if (matches) {
+          return matches[1]
+        }
+      }
+    }
     if (downloadURLFmt !== undefined) {
-      downloadURLFmt &&
-        (options.downloadURL = (version: string) =>
-          fmt.sprintf(downloadURLFmt, version))
+      options.downloadURL = (version: string) =>
+        fmt.sprintf(downloadURLFmt, version)
     }
     if (downloadDir !== undefined) {
       options.downloadDir = downloadDir
@@ -268,5 +287,25 @@ export class Installer implements InstallerOptions {
     }
 
     throw new Error(`could not download and install ${version}`)
+  }
+
+  /**
+   * @returns Array of downloaded tool versions.
+   */
+  downloaded() {
+    const versions: string[] = []
+    for (const { name, isFile } of Deno.readDirSync(this.downloadDir)) {
+      if (!isFile) {
+        continue
+      }
+
+      const version = this.version(name)
+      if (!version) {
+        continue
+      }
+
+      versions.push(version)
+    }
+    return versions
   }
 }

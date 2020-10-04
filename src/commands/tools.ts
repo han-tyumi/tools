@@ -1,15 +1,11 @@
 import { Command, HelpCommand, CompletionsCommand } from '../../deps.ts'
-import { Installer } from '../installer.ts'
+import { Installer, InstallerConfig } from '../installer.ts'
 import { installCommand } from './install.ts'
 import { downloadCommand } from './download.ts'
+import { listCommand } from './list.ts'
 
-export interface GlobalCommandOptions {
+export interface GlobalCommandOptions extends InstallerConfig {
   tool?: string
-  filenameFmt?: string
-  downloadURLFmt?: string
-  downloadDir: string
-  cache: boolean
-  installFn?: string
 }
 
 const installerOptions = await Installer.options()
@@ -27,6 +23,9 @@ export const toolsCommand = new Command()
     { global: true }
   )
   .option('--filenameFmt <filenameFmt:string>', 'filename format to use', {
+    global: true,
+  })
+  .option('--versionRegex <versionRegex:string>', 'version regex to use', {
     global: true,
   })
   .option(
@@ -52,6 +51,7 @@ export const toolsCommand = new Command()
 
   .command('install', installCommand)
   .command('download', downloadCommand)
+  .command('list', listCommand)
 
   .command('help', new HelpCommand().global())
   .command('completions', new CompletionsCommand())
