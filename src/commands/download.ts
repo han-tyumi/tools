@@ -1,6 +1,5 @@
 import { Command, fmt } from '../../deps.ts'
-import { getConfig } from '../config.ts'
-import { Installer, InstallerOptions } from '../installer.ts'
+import { Installer } from '../installer.ts'
 
 interface DownloadCommandOptions {
   tool?: string
@@ -9,7 +8,7 @@ interface DownloadCommandOptions {
   cache: boolean
 }
 
-const config = (await getConfig()) || {}
+const installerOptions = await Installer.options()
 
 export const downloadCommand = new Command()
   .arguments('<version:string>')
@@ -30,46 +29,34 @@ export const downloadCommand = new Command()
       { tool, downloadURLFmt, filenameFmt, cache }: DownloadCommandOptions,
       version: string
     ) => {
-      let installerOptions: InstallerOptions | undefined
+      let options = tool ? installerOptions.get(tool) : undefined
 
-      const toolConfig = tool && config[tool]
-      if (toolConfig) {
-        if (toolConfig.options) {
-          installerOptions = toolConfig.options
-        } else {
-          const { downloadURLFmt, filenameFmt } = toolConfig
-          if (downloadURLFmt && filenameFmt) {
-            installerOptions = {
-              downloadURL: (version) => fmt.sprintf(downloadURLFmt, version),
-              filename: (version) => fmt.sprintf(filenameFmt, version),
-              cache,
-            }
-          }
-        }
-      }
-
-      if (!installerOptions) {
+      if (!options) {
         if (!(downloadURLFmt && filenameFmt)) {
           throw new Error('downloadURLFmt and/or filenameFmt not defined')
         } else {
-          installerOptions = {
+          options = {
             downloadURL: (version) => fmt.sprintf(downloadURLFmt, version),
             filename: (version) => fmt.sprintf(filenameFmt, version),
+            cache,
           }
         }
       } else {
         if (downloadURLFmt) {
-          installerOptions.downloadURL = (version) =>
+          options.downloadURL = (version) =>
             fmt.sprintf(downloadURLFmt, version)
         }
 
         if (filenameFmt) {
-          installerOptions.filename = (version) =>
-            fmt.sprintf(filenameFmt, version)
+          options.filename = (version) => fmt.sprintf(filenameFmt, version)
+        }
+
+        if (cache !== undefined) {
+          options.cache = cache
         }
       }
 
-      const installer = new Installer(installerOptions)
+      const installer = new Installer(options)
 
       installer.download(version)
     }

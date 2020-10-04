@@ -1,7 +1,6 @@
 import { Command, fmt } from '../../deps.ts'
+import { Installer } from '../installer.ts'
 import { getJsFn } from '../utils.ts'
-import { getConfig } from '../config.ts'
-import { InstallerOptions, Installer } from '../installer.ts'
 
 interface InstallCommandOptions {
   tool?: string
@@ -11,7 +10,7 @@ interface InstallCommandOptions {
   offline: boolean
 }
 
-const config = (await getConfig()) || {}
+const installerOptions = await Installer.options()
 
 export const installCommand = new Command()
   .arguments('<version:string>')
@@ -42,58 +41,32 @@ export const installCommand = new Command()
       }: InstallCommandOptions,
       version: string
     ) => {
-      let installerOptions: InstallerOptions | undefined
+      let options = tool ? installerOptions.get(tool) : undefined
 
-      const toolConfig = tool && config[tool]
-      if (toolConfig) {
-        if (toolConfig.options) {
-          installerOptions = toolConfig.options
-        } else {
-          const { filenameFmt, installFn } = toolConfig
-          if (filenameFmt && installFn) {
-            const install = await getJsFn(installFn)
-
-            installerOptions = {
-              filename: (version) => fmt.sprintf(filenameFmt, version),
-              cache: !offline,
-              installFn: install,
-            }
-
-            const downloadURLFmt = toolConfig.downloadURLFmt
-            if (!offline && downloadURLFmt) {
-              installerOptions.downloadURL = (version) =>
-                fmt.sprintf(downloadURLFmt, version)
-            }
-          }
-        }
-      }
-
-      if (!installerOptions) {
+      if (!options) {
         if (!(filenameFmt && installFn)) {
           throw new Error('filenameFmt and/or installFn not defined')
         } else {
-          installerOptions = {
+          options = {
             filename: (version) => fmt.sprintf(filenameFmt, version),
             installFn: await getJsFn(installFn),
           }
         }
       } else {
         if (filenameFmt) {
-          installerOptions.filename = (version) =>
-            fmt.sprintf(filenameFmt, version)
+          options.filename = (version) => fmt.sprintf(filenameFmt, version)
         }
 
         if (installFn) {
-          installerOptions.installFn = await getJsFn(installFn)
+          options.installFn = await getJsFn(installFn)
         }
       }
 
       if (!offline && downloadURLFmt) {
-        installerOptions.downloadURL = (version) =>
-          fmt.sprintf(downloadURLFmt, version)
+        options.downloadURL = (version) => fmt.sprintf(downloadURLFmt, version)
       }
 
-      const installer = new Installer(installerOptions)
+      const installer = new Installer(options)
 
       installer.install(version)
     }

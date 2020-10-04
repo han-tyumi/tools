@@ -1,4 +1,5 @@
-import { existsSync, fmt, path } from '../deps.ts'
+import { existsSync, fmt, parse, path } from '../deps.ts'
+import { getJsFn, homeDir, mainDir } from './utils.ts'
 
 export interface InstallerOptions {
   /** The filename to be used for downloaded tool versions. */
@@ -11,7 +12,7 @@ export interface InstallerOptions {
    * The directory to store downloaded tool versions.
    * This can absolute or relative to the current working directory.
    */
-  downloadDirectory?: string
+  downloadDir?: string
 
   /** Whether or not to reuse already downloaded tools (defaults to true). */
   cache?: boolean
@@ -20,31 +21,124 @@ export interface InstallerOptions {
   installFn?: (filepath: string) => void
 }
 
+export interface InstallerConfig {
+  filenameFmt: string
+  downloadURLFmt?: string
+  downloadDir?: string
+  cache?: boolean
+  installFn?: string
+}
+
+type InstallerConfigExt = 'yml' | 'yaml' | 'ts' | 'js'
+
 /**
  * Installer helps with the download and installation of tools.
  */
 export class Installer implements InstallerOptions {
   readonly downloadURL?: (version: string) => string
-  readonly downloadDirectory: string
+  readonly downloadDir: string
   readonly filename: (version: string) => string
   readonly downloadedFile: (version: string) => string
   readonly cache: boolean
+
   #installFn?: (filepath: string) => void
+
+  private static _basename = 'toolsrc'
+  private static _exts: InstallerConfigExt[] = ['yml', 'yaml', 'ts', 'js']
+  private static _cache?: Promise<Map<string, InstallerOptions>>
 
   constructor({
     downloadURL,
-    downloadDirectory = '',
+    downloadDir = '',
     filename,
     cache = true,
     installFn,
   }: InstallerOptions) {
     this.downloadURL = downloadURL
-    this.downloadDirectory = downloadDirectory
+    this.downloadDir = downloadDir
     this.filename = filename
     this.downloadedFile = (version) =>
-      path.resolve(path.join(this.downloadDirectory, this.filename(version)))
+      path.resolve(path.join(this.downloadDir, this.filename(version)))
     this.cache = cache
     this.#installFn = installFn
+  }
+
+  static options(cache = true) {
+    if (cache && this._cache) {
+      return this._cache
+    }
+
+    const config = this._findConfig()
+    if (!config) {
+      throw new Error(`could not find ${this._basename} configuration file`)
+    }
+
+    const { dir, ext, file } = config
+    if (ext === 'ts' || ext === 'js') {
+      this._cache = this._parseJsFile(file)
+    } else {
+      this._cache = this._parseYamlFile(dir, file)
+    }
+
+    return this._cache
+  }
+
+  private static _findConfig() {
+    const dirs = [Deno.cwd()]
+    homeDir && dirs.push(homeDir)
+    dirs.push(mainDir)
+
+    for (const dir of dirs) {
+      for (const ext of this._exts) {
+        const file = path.join(dir, `${this._basename}.${ext}`)
+        if (!existsSync(file)) {
+          continue
+        }
+        return { dir, ext, file }
+      }
+    }
+  }
+
+  private static async _parseJsFile(file: string) {
+    const mod = await import(file)
+    const toolOptions = (mod.default ? mod.default : mod) as Record<
+      string,
+      InstallerOptions
+    >
+    return new Map(Object.entries(toolOptions))
+  }
+
+  private static async _parseYamlFile(dir: string, file: string) {
+    const yaml = Deno.readTextFileSync(file)
+    const parsedConfig = (await parse(yaml)) as Record<string, InstallerConfig>
+
+    const options = new Map<string, InstallerOptions>()
+    for (const [tool, config] of Object.entries(parsedConfig)) {
+      options.set(tool, await this._optionsFromConfig(config, dir))
+    }
+
+    return options
+  }
+
+  private static async _optionsFromConfig(
+    {
+      filenameFmt,
+      downloadURLFmt,
+      downloadDir,
+      cache,
+      installFn,
+    }: InstallerConfig,
+    dir?: string
+  ) {
+    return {
+      filename: (version) => fmt.sprintf(filenameFmt, version),
+      downloadURL: downloadURLFmt
+        ? (version) => fmt.sprintf(downloadURLFmt, version)
+        : undefined,
+      downloadDir,
+      cache,
+      installFn: installFn ? await getJsFn(installFn, dir) : undefined,
+    } as InstallerOptions
   }
 
   async download(version: string) {
