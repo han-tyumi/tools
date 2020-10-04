@@ -2,14 +2,20 @@ import { existsSync, fmt, parse, path } from '../deps.ts'
 import { escapeRegex, getJsFn, homeDir, mainDir } from './utils.ts'
 
 export interface InstallerOptions {
-  /** The filename to be used for downloaded tool versions. */
-  filename?: (version: string) => string
+  /**
+   * The filename to be used for downloaded tool versions.
+   * If a string is used, `%s` will be replaced with the downloaded tool's version.
+   */
+  filename?: ((version: string) => string) | string
 
   /** Returns the version for a given filename. */
   version?: (filename: string) => string | undefined
 
-  /** The URL to download a tool from when given a version. */
-  downloadURL?: (version: string) => string
+  /**
+   * The URL to download a tool from when given a version.
+   * If a string is used, `%s` will be replaced with the tool's version.
+   */
+  downloadURL?: ((version: string) => string) | string
 
   /**
    * The directory to store downloaded tool versions.
@@ -21,36 +27,27 @@ export interface InstallerOptions {
   cache?: boolean
 
   /** Function called with the path to the downloaded tool file to install. */
-  installFn?: (filepath: string) => void
+  install?: ((filepath: string) => void) | string
 }
 
-export interface InstallerConfig {
+export interface InstallerConfig extends InstallerOptions {
   /**
    * The filename to be used for downloading tool versions.
    * The first `%s` token will be replaced with the the downloaded tool's version.
    */
-  filenameFmt?: string
+  filename?: string
 
   /**
    * The URL to download a tool from when given a version.
    * The first `%s` token will be replaced with the tool's version.
    */
-  downloadURLFmt?: string
-
-  /**
-   * The directory to store downloaded tool versions.
-   * This can be absolute or relative to the current working directory.
-   */
-  downloadDir?: string
-
-  /** Whether or not to reuse already downloaded tools. */
-  cache?: boolean
+  downloadURL?: string
 
   /**
    * Path to the function to be called with the path to the downloaded tool file to install.
    * This function can either be a default export or a named export specified after a `#` at the end of the path.
    */
-  installFn?: string
+  install?: string
 }
 
 type InstallerConfigExt = 'yml' | 'yaml' | 'ts' | 'js'
@@ -64,7 +61,7 @@ export class Installer implements InstallerOptions {
   private static _cache?: Promise<Map<string, InstallerOptions>>
 
   readonly filename: (version: string) => string
-  readonly version: (filename: string) => string | undefined
+  readonly version?: (filename: string) => string | undefined
   readonly downloadURL?: (version: string) => string
   readonly downloadDir: string
   readonly cache: boolean
@@ -72,24 +69,46 @@ export class Installer implements InstallerOptions {
   /** Path to a downloaded tool version. */
   readonly downloadedFile: (version: string) => string
 
-  #installFn?: (filepath: string) => void
+  #install?: Promise<(filepath: string) => void>
 
   constructor({
-    filename = (version) => version,
-    version = (filename) => filename,
+    filename = '%s',
+    version,
     downloadURL,
     downloadDir = '',
     cache = true,
-    installFn,
+    install,
   }: InstallerOptions) {
-    this.filename = filename
-    this.version = version
-    this.downloadURL = downloadURL
+    if (typeof filename === 'string') {
+      this.filename = (version) => fmt.sprintf(filename, version)
+      if (!version) {
+        this.version = (filename) => {
+          const escaped = escapeRegex(filename)
+          const [prefix, suffix] = escaped.split('%s')
+          const matches = new RegExp(`(?<=${prefix})(.*)(?=${suffix})`).exec(
+            filename
+          )
+          if (matches) {
+            return matches[1]
+          }
+        }
+      } else {
+        this.version = version
+      }
+    } else {
+      this.filename = filename
+      this.version = version
+    }
+    this.downloadURL =
+      typeof downloadURL === 'string'
+        ? (version) => fmt.sprintf(downloadURL, version)
+        : downloadURL
     this.downloadDir = path.resolve(downloadDir)
     this.downloadedFile = (version) =>
       path.resolve(path.join(this.downloadDir, this.filename(version)))
     this.cache = cache
-    this.#installFn = installFn
+    this.#install =
+      typeof install === 'string' ? getJsFn(install) : Promise.resolve(install)
   }
 
   /**
@@ -188,32 +207,15 @@ export class Installer implements InstallerOptions {
   }
 
   private static async _optionsFromConfig(
-    {
-      filenameFmt,
-      downloadURLFmt,
-      downloadDir,
-      cache,
-      installFn,
-    }: InstallerConfig,
+    { filename, downloadURL, downloadDir, cache, install }: InstallerConfig,
     dir?: string
   ) {
     const options: InstallerOptions = {}
-    if (filenameFmt !== undefined) {
-      options.filename = (version) => fmt.sprintf(filenameFmt, version)
-      options.version = (filename) => {
-        const escaped = escapeRegex(filenameFmt)
-        const [prefix, suffix] = escaped.split('%s')
-        const matches = new RegExp(`(?<=${prefix})(.*)(?=${suffix})`).exec(
-          filename
-        )
-        if (matches) {
-          return matches[1]
-        }
-      }
+    if (filename !== undefined) {
+      options.filename = filename
     }
-    if (downloadURLFmt !== undefined) {
-      options.downloadURL = (version: string) =>
-        fmt.sprintf(downloadURLFmt, version)
+    if (downloadURL !== undefined) {
+      options.downloadURL = downloadURL
     }
     if (downloadDir !== undefined) {
       options.downloadDir = downloadDir
@@ -221,8 +223,8 @@ export class Installer implements InstallerOptions {
     if (cache !== undefined) {
       options.cache = cache
     }
-    if (installFn !== undefined) {
-      options.installFn = await getJsFn(installFn, dir)
+    if (install !== undefined) {
+      options.install = await getJsFn(install, dir)
     }
     return options
   }
@@ -266,20 +268,20 @@ export class Installer implements InstallerOptions {
    * @param download Whether to download the tool version if not downloaded.
    */
   async install(version: string, download = true) {
-    if (!this.#installFn) {
+    if (!this.#install) {
       throw new Error('installFn undefined')
     }
 
     const previousFile = this.downloadedFile(version)
     if (existsSync(previousFile)) {
-      return this.#installFn(previousFile)
+      return (await this.#install)(previousFile)
     } else if (!download) {
       throw new Error(`${version} could not be found`)
     }
 
     const downloadedFile = await this.download(version)
     if (downloadedFile) {
-      return this.#installFn(downloadedFile)
+      return (await this.#install)(downloadedFile)
     }
 
     throw new Error(`could not download and install ${version}`)
@@ -289,6 +291,10 @@ export class Installer implements InstallerOptions {
    * @returns Array of downloaded tool versions.
    */
   downloaded() {
+    if (!this.version) {
+      return []
+    }
+
     const versions: string[] = []
     for (const { name, isFile } of Deno.readDirSync(this.downloadDir)) {
       if (!isFile) {

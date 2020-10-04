@@ -22,14 +22,12 @@ export const toolsCommand = new Command()
     'name of the tool configuration to use',
     { global: true }
   )
-  .option('--filenameFmt <filenameFmt:string>', 'filename format to use', {
+  .option('--filename <filename:string>', 'filename format to use', {
     global: true,
   })
-  .option(
-    '--downloadURLFmt <downloadURLFmt:string>',
-    'download URL format to use',
-    { global: true }
-  )
+  .option('--downloadURL <downloadURL:string>', 'download URL format to use', {
+    global: true,
+  })
   .option(
     '--downloadDir <downloadDir:string>',
     'where to store downloaded tool versions',
@@ -41,7 +39,7 @@ export const toolsCommand = new Command()
     { global: true }
   )
   .option(
-    '--installFn <installFn:string>',
+    '--installFn <install:string>',
     'path to the install function to be used',
     { global: true }
   )
