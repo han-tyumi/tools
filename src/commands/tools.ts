@@ -3,6 +3,7 @@ import { Installer, InstallerConfig } from '../installer.ts'
 import { installCommand } from './install.ts'
 import { downloadCommand } from './download.ts'
 import { listCommand } from './list.ts'
+import { latestCommand } from './latest.ts'
 
 export interface GlobalCommandOptions extends InstallerConfig {
   tool?: string
@@ -47,6 +48,7 @@ export const toolsCommand = new Command()
   .command('install', installCommand)
   .command('download', downloadCommand)
   .command('list', listCommand)
+  .command('latest', latestCommand)
 
   .command('help', new HelpCommand().global())
   .command('completions', new CompletionsCommand())

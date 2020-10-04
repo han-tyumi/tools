@@ -329,7 +329,7 @@ export class Installer implements InstallerOptions {
    * @returns The latest downloaded tool version.
    */
   latest() {
-    const versions = this.downloaded().sort()
-    return versions.length ? versions[0] : undefined
+    const versions = this.downloaded()
+    return versions.length ? versions[versions.length - 1] : undefined
   }
 }
