@@ -29,6 +29,9 @@ export const toolsCommand = new Command()
   .option('--downloadURL <downloadURL:string>', 'download URL format to use', {
     global: true,
   })
+  .option('--versionFmt <versionFmt:string>', 'version format to use', {
+    global: true,
+  })
   .option(
     '--downloadDir <downloadDir:string>',
     'where to store downloaded tool versions',

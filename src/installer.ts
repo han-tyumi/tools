@@ -18,6 +18,13 @@ export interface InstallerOptions {
   downloadURL?: ((version: string) => string) | string
 
   /**
+   * Strict format for tool versions where `#`s denote version numbers.
+   * This allows URLs and filenames to be formatted consistently as missing
+   * version numbers will be replaced with 0s.
+   */
+  versionFmt?: string
+
+  /**
    * The directory to store downloaded tool versions.
    * This can be absolute or relative to the current working directory.
    */
@@ -75,12 +82,14 @@ export class Installer implements InstallerOptions {
     filename = '%s',
     version,
     downloadURL,
+    versionFmt,
     downloadDir = '',
     cache = true,
     install,
   }: InstallerOptions) {
     if (typeof filename === 'string') {
       this.filename = (version) => fmt.sprintf(filename, version)
+
       if (!version) {
         const escaped = escapeRegex(filename)
         const [prefix, suffix] = escaped.split('%s')
@@ -98,14 +107,56 @@ export class Installer implements InstallerOptions {
       this.filename = filename
       this.version = version
     }
+
     this.downloadURL =
       typeof downloadURL === 'string'
         ? (version) => fmt.sprintf(downloadURL, version)
         : downloadURL
+
+    if (versionFmt) {
+      const tokens = versionFmt.split('#')
+      const regex = Installer._versionRegex(versionFmt)
+
+      const formatVersion = (version: string) => {
+        const matches = regex.exec(version)
+        if (!matches) {
+          return version
+        }
+
+        let formatted = `${tokens[0]}${matches[1]}`
+
+        let i = 1
+        for (; i < tokens.length - 1; i++) {
+          const token = tokens[i]
+          formatted += `${token}${matches[i + 1] || 0}`
+        }
+        formatted += `${tokens[i]}`
+
+        return formatted
+      }
+
+      const filename = this.filename
+      this.filename = (version) => {
+        version = formatVersion(version)
+        return filename(version)
+      }
+
+      if (this.downloadURL) {
+        const downloadURL = this.downloadURL
+        this.downloadURL = (version) => {
+          version = formatVersion(version)
+          return downloadURL(version)
+        }
+      }
+    }
+
     this.downloadDir = path.resolve(downloadDir)
+
     this.downloadedFile = (version) =>
       path.resolve(path.join(this.downloadDir, this.filename(version)))
+
     this.cache = cache
+
     this.#install =
       typeof install === 'string' ? getJsFn(install) : Promise.resolve(install)
   }
@@ -206,26 +257,39 @@ export class Installer implements InstallerOptions {
   }
 
   private static async _optionsFromConfig(
-    { filename, downloadURL, downloadDir, cache, install }: InstallerConfig,
+    config: InstallerConfig,
     dir?: string
   ) {
-    const options: InstallerOptions = {}
-    if (filename !== undefined) {
-      options.filename = filename
-    }
-    if (downloadURL !== undefined) {
-      options.downloadURL = downloadURL
-    }
-    if (downloadDir !== undefined) {
-      options.downloadDir = downloadDir
-    }
-    if (cache !== undefined) {
-      options.cache = cache
-    }
-    if (install !== undefined) {
-      options.install = await getJsFn(install, dir)
+    const options: InstallerOptions = { ...config }
+    if (typeof options.install === 'string') {
+      options.install = await getJsFn(options.install, dir)
     }
     return options
+  }
+
+  private static _versionRegex(versionFmt: string) {
+    const escaped = escapeRegex(versionFmt)
+    const tokens = escaped.split('#')
+
+    let regexString = `^(?:${tokens[0]})?(\\d+)`
+
+    let i = 1
+    for (; i < tokens.length - 1; i++) {
+      const token = tokens[i]
+      if (token) {
+        regexString += `(?:${token}(\\d+))?`
+      } else {
+        regexString += '(\\d+)?'
+      }
+    }
+
+    if (tokens[i]) {
+      regexString += `(?:${tokens[i]})?`
+    }
+
+    regexString += '$'
+
+    return new RegExp(regexString)
   }
 
   /**
