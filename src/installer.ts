@@ -3,7 +3,7 @@ import { getJsFn, homeDir, mainDir } from './utils.ts'
 
 export interface InstallerOptions {
   /** The filename to be used for downloaded tool versions. */
-  filename: (version: string) => string
+  filename?: (version: string) => string
 
   /** The URL to download a tool from when given a version. */
   downloadURL?: (version: string) => string
@@ -22,7 +22,7 @@ export interface InstallerOptions {
 }
 
 export interface InstallerConfig {
-  filenameFmt: string
+  filenameFmt?: string
   downloadURLFmt?: string
   downloadDir?: string
   cache?: boolean
@@ -50,7 +50,7 @@ export class Installer implements InstallerOptions {
   constructor({
     downloadURL,
     downloadDir = '',
-    filename,
+    filename = (version) => version,
     cache = true,
     installFn,
   }: InstallerOptions) {
@@ -61,6 +61,28 @@ export class Installer implements InstallerOptions {
       path.resolve(path.join(this.downloadDir, this.filename(version)))
     this.cache = cache
     this.#installFn = installFn
+  }
+
+  static async get(tool?: string, overrides?: InstallerConfig, cache = true) {
+    let options: InstallerOptions | undefined
+    if (tool) {
+      if (cache && this._cache) {
+        options = (await this._cache).get(tool)
+      } else {
+        options = (await this.options(cache)).get(tool)
+      }
+    }
+
+    if (overrides) {
+      const overrideOptions = await this._optionsFromConfig(overrides)
+      options = Object.assign({}, options ?? {}, overrideOptions)
+    }
+
+    if (!options) {
+      throw new Error(`could not get installer options for ${tool}`)
+    }
+
+    return new Installer(options)
   }
 
   static options(cache = true) {
@@ -130,15 +152,25 @@ export class Installer implements InstallerOptions {
     }: InstallerConfig,
     dir?: string
   ) {
-    return {
-      filename: (version) => fmt.sprintf(filenameFmt, version),
-      downloadURL: downloadURLFmt
-        ? (version) => fmt.sprintf(downloadURLFmt, version)
-        : undefined,
-      downloadDir,
-      cache,
-      installFn: installFn ? await getJsFn(installFn, dir) : undefined,
-    } as InstallerOptions
+    const options: InstallerOptions = {}
+    if (filenameFmt !== undefined) {
+      options.filename = (version) => fmt.sprintf(filenameFmt, version)
+    }
+    if (downloadURLFmt !== undefined) {
+      downloadURLFmt &&
+        (options.downloadURL = (version: string) =>
+          fmt.sprintf(downloadURLFmt, version))
+    }
+    if (downloadDir !== undefined) {
+      options.downloadDir = downloadDir
+    }
+    if (cache !== undefined) {
+      options.cache = cache
+    }
+    if (installFn !== undefined) {
+      options.installFn = await getJsFn(installFn, dir)
+    }
+    return options
   }
 
   async download(version: string) {
