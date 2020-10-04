@@ -82,8 +82,8 @@ export class Installer implements InstallerOptions {
     if (typeof filename === 'string') {
       this.filename = (version) => fmt.sprintf(filename, version)
       if (!version) {
-          const escaped = escapeRegex(filename)
-          const [prefix, suffix] = escaped.split('%s')
+        const escaped = escapeRegex(filename)
+        const [prefix, suffix] = escaped.split('%s')
         const regex = new RegExp(`(?<=${prefix})(.*)(?=${suffix})`)
         this.version = (filename) => {
           const matches = regex.exec(filename)
@@ -262,13 +262,21 @@ export class Installer implements InstallerOptions {
 
   /**
    * Installs the specified tool version.
+   * Defaults to the latest downloaded version if unspecified.
    *
    * @param version The tool version to install.
    * @param download Whether to download the tool version if not downloaded.
    */
-  async install(version: string, download = true) {
+  async install(version?: string, download = true) {
     if (!this.#install) {
       throw new Error('installFn undefined')
+    }
+
+    if (!version) {
+      version = this.latest()
+      if (!version) {
+        throw new Error('no versions downloaded')
+      }
     }
 
     const previousFile = this.downloadedFile(version)
@@ -308,5 +316,13 @@ export class Installer implements InstallerOptions {
       versions.push(version)
     }
     return versions
+  }
+
+  /**
+   * @returns The latest downloaded tool version.
+   */
+  latest() {
+    const versions = this.downloaded().sort()
+    return versions.length ? versions[0] : undefined
   }
 }
