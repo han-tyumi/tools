@@ -1,5 +1,5 @@
 import { existsSync, fmt, parse, path } from '../deps.ts'
-import { getJsFn, homeDir, mainDir } from './utils.ts'
+import { escapeRegex, getJsFn, homeDir, mainDir } from './utils.ts'
 
 export interface InstallerOptions {
   /** The filename to be used for downloaded tool versions. */
@@ -30,11 +30,6 @@ export interface InstallerConfig {
    * The first `%s` token will be replaced with the the downloaded tool's version.
    */
   filenameFmt?: string
-
-  /**
-   * Regex used to find a filename's version.
-   */
-  versionRegex?: string
 
   /**
    * The URL to download a tool from when given a version.
@@ -195,7 +190,6 @@ export class Installer implements InstallerOptions {
   private static async _optionsFromConfig(
     {
       filenameFmt,
-      versionRegex,
       downloadURLFmt,
       downloadDir,
       cache,
@@ -206,10 +200,12 @@ export class Installer implements InstallerOptions {
     const options: InstallerOptions = {}
     if (filenameFmt !== undefined) {
       options.filename = (version) => fmt.sprintf(filenameFmt, version)
-    }
-    if (versionRegex !== undefined) {
       options.version = (filename) => {
-        const matches = new RegExp(versionRegex).exec(filename)
+        const escaped = escapeRegex(filenameFmt)
+        const [prefix, suffix] = escaped.split('%s')
+        const matches = new RegExp(`(?<=${prefix})(.*)(?=${suffix})`).exec(
+          filename
+        )
         if (matches) {
           return matches[1]
         }

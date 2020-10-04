@@ -4,6 +4,10 @@ export const mainDir = path.dirname(path.fromFileUrl(Deno.mainModule))
 export const homeDir =
   Deno.env.get(Deno.build.os === 'windows' ? 'USERPROFILE' : 'HOME') || ''
 
+export function escapeRegex(input: string) {
+  return input.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+}
+
 export async function getJsFn(identifier: string, dir = Deno.cwd()) {
   let [file, name = 'default'] = identifier.split('#')
 

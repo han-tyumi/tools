@@ -25,9 +25,6 @@ export const toolsCommand = new Command()
   .option('--filenameFmt <filenameFmt:string>', 'filename format to use', {
     global: true,
   })
-  .option('--versionRegex <versionRegex:string>', 'version regex to use', {
-    global: true,
-  })
   .option(
     '--downloadURLFmt <downloadURLFmt:string>',
     'download URL format to use',
