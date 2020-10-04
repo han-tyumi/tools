@@ -1,5 +1,11 @@
 {
   "deno.enable": true,
-  "conventionalCommits.scopes": ["installer", "code", "cli", "config"],
+  "conventionalCommits.scopes": [
+    "installer",
+    "code",
+    "cli",
+    "config",
+    "module"
+  ],
   "deno.import_intellisense_autodiscovery": false
 }

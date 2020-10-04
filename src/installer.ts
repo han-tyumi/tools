@@ -1,5 +1,5 @@
 import { existsSync, fmt, parse, path } from '../deps.ts'
-import { escapeRegex, getJsFn, homeDir, mainDir } from './utils.ts'
+import { escapeRegex, getJsFn, homeDir } from './utils.ts'
 
 export interface InstallerOptions {
   /**
@@ -222,7 +222,6 @@ export class Installer implements InstallerOptions {
   private static _findConfig() {
     const dirs = [Deno.cwd()]
     homeDir && dirs.push(homeDir)
-    dirs.push(mainDir)
 
     for (const dir of dirs) {
       for (const ext of this._exts) {
