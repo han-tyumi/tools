@@ -82,12 +82,11 @@ export class Installer implements InstallerOptions {
     if (typeof filename === 'string') {
       this.filename = (version) => fmt.sprintf(filename, version)
       if (!version) {
-        this.version = (filename) => {
           const escaped = escapeRegex(filename)
           const [prefix, suffix] = escaped.split('%s')
-          const matches = new RegExp(`(?<=${prefix})(.*)(?=${suffix})`).exec(
-            filename
-          )
+        const regex = new RegExp(`(?<=${prefix})(.*)(?=${suffix})`)
+        this.version = (filename) => {
+          const matches = regex.exec(filename)
           if (matches) {
             return matches[1]
           }
