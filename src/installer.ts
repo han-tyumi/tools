@@ -10,7 +10,7 @@ export interface InstallerOptions {
 
   /**
    * The directory to store downloaded tool versions.
-   * This can absolute or relative to the current working directory.
+   * This can be absolute or relative to the current working directory.
    */
   downloadDir?: string
 
@@ -22,30 +22,53 @@ export interface InstallerOptions {
 }
 
 export interface InstallerConfig {
+  /**
+   * The filename to be used for downloading tool versions.
+   * The first `%s` token will be replaced with the the downloaded tool's version.
+   */
   filenameFmt?: string
+
+  /**
+   * The URL to download a tool from when given a version.
+   * The first `%s` token will be replaced with the tool's version.
+   */
   downloadURLFmt?: string
+
+  /**
+   * The directory to store downloaded tool versions.
+   * This can be absolute or relative to the current working directory.
+   */
   downloadDir?: string
+
+  /** Whether or not to reuse already downloaded tools. */
   cache?: boolean
+
+  /**
+   * Path to the function to be called with the path to the downloaded tool file to install.
+   * This function can either be a default export or a named export specified after a `#` at the end of the path.
+   */
   installFn?: string
 }
 
 type InstallerConfigExt = 'yml' | 'yaml' | 'ts' | 'js'
 
 /**
- * Installer helps with the download and installation of tools.
+ * Helps with the download and installation of tool versions.
  */
 export class Installer implements InstallerOptions {
-  readonly downloadURL?: (version: string) => string
-  readonly downloadDir: string
-  readonly filename: (version: string) => string
-  readonly downloadedFile: (version: string) => string
-  readonly cache: boolean
-
-  #installFn?: (filepath: string) => void
-
   private static _basename = 'toolsrc'
   private static _exts: InstallerConfigExt[] = ['yml', 'yaml', 'ts', 'js']
   private static _cache?: Promise<Map<string, InstallerOptions>>
+
+  readonly downloadURL?: (version: string) => string
+  readonly downloadDir: string
+  readonly filename: (version: string) => string
+  readonly cache: boolean
+
+  /** Path to a downloaded tool version. */
+  readonly downloadedFile: (version: string) => string
+
+  #installFn?: (filepath: string) => void
 
   constructor({
     downloadURL,
@@ -63,7 +86,18 @@ export class Installer implements InstallerOptions {
     this.#installFn = installFn
   }
 
+  /**
+   * @param tool Name of the tool configuration to use.
+   * @param overrides Configuration overrides.
+   * @param cache Whether to use a cached tool configuration.
+   *
+   * @returns Installer using the given tool configuration and overrides.
+   */
   static async get(tool?: string, overrides?: InstallerConfig, cache = true) {
+    if (!(tool && overrides)) {
+      throw new Error('tool and/or overrides not defined')
+    }
+
     let options: InstallerOptions | undefined
     if (tool) {
       if (cache && this._cache) {
@@ -85,6 +119,11 @@ export class Installer implements InstallerOptions {
     return new Installer(options)
   }
 
+  /**
+   * @param cache Whether to use a cached tool configuration.
+   *
+   * @returns Map of installer options for each tool configuration.
+   */
   static options(cache = true) {
     if (cache && this._cache) {
       return this._cache
@@ -173,6 +212,13 @@ export class Installer implements InstallerOptions {
     return options
   }
 
+  /**
+   * Downloads the specified tool version.
+   *
+   * @param version The tool version to download.
+   *
+   * @returns The path to the downloaded tool file.
+   */
   async download(version: string) {
     const file = this.downloadedFile(version)
     fmt.printf('previously downloaded? ...')
@@ -198,6 +244,12 @@ export class Installer implements InstallerOptions {
     return file
   }
 
+  /**
+   * Installs the specified tool version.
+   *
+   * @param version The tool version to install.
+   * @param download Whether to download the tool version if not downloaded.
+   */
   async install(version: string, download = true) {
     if (!this.#installFn) {
       throw new Error('installFn undefined')
