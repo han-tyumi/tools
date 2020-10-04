@@ -5,8 +5,6 @@ import { GlobalCommandOptions } from './tools.ts'
 interface DownloadCommandOptions extends GlobalCommandOptions {}
 
 export const downloadCommand = new Command()
-  .alias('dl')
-  .alias('d')
   .arguments('<version:string>')
   .description('downloads the specified tool version')
   .action(
