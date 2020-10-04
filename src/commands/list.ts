@@ -5,6 +5,8 @@ import { GlobalCommandOptions } from './tools.ts'
 interface ListCommandOptions extends GlobalCommandOptions {}
 
 export const listCommand = new Command()
+  .alias('ls')
+  .alias('l')
   .description('lists the downloaded tool versions')
   .action(async ({ tool, ...config }: ListCommandOptions) => {
     const installer = await Installer.get(tool, config)

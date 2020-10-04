@@ -5,6 +5,7 @@ import { GlobalCommandOptions } from './tools.ts'
 interface InstallCommandOptions extends GlobalCommandOptions {}
 
 export const installCommand = new Command()
+  .alias('i')
   .arguments('<version:string>')
   .description('installs the specified tool version')
   .action(
