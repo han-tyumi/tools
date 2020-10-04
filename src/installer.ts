@@ -237,12 +237,14 @@ export class Installer implements InstallerOptions {
    */
   async download(version: string) {
     const file = this.downloadedFile(version)
-    fmt.printf('previously downloaded? ...')
-    if (this.cache && existsSync(file)) {
-      fmt.printf(' yes\n')
-      return file
+    if (this.cache) {
+      fmt.printf(`${version} previously downloaded? ...`)
+      if (existsSync(file)) {
+        fmt.printf(' yes\n')
+        return file
+      }
+      fmt.printf(' no\n')
     }
-    fmt.printf(' no\n')
 
     if (!this.downloadURL) {
       throw new Error('downloadURL not defined')
