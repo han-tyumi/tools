@@ -34,7 +34,7 @@ export interface InstallerOptions {
   cache?: boolean
 
   /** Function called with the path to the downloaded tool file to install. */
-  install?: ((filepath: string) => void) | string
+  installFn?: ((filepath: string) => void) | string
 }
 
 export interface InstallerConfig extends InstallerOptions {
@@ -54,7 +54,7 @@ export interface InstallerConfig extends InstallerOptions {
    * Path to the function to be called with the path to the downloaded tool file to install.
    * This function can either be a default export or a named export specified after a `#` at the end of the path.
    */
-  install?: string
+  installFn?: string
 }
 
 type InstallerConfigExt = 'yml' | 'yaml' | 'ts' | 'js'
@@ -76,7 +76,7 @@ export class Installer implements InstallerOptions {
   /** Path to a downloaded tool version. */
   readonly downloadedFile: (version: string) => string
 
-  #install?: Promise<(filepath: string) => void>
+  #installFn?: Promise<(filepath: string) => void>
 
   constructor({
     filename = '%s',
@@ -85,7 +85,7 @@ export class Installer implements InstallerOptions {
     versionFmt,
     downloadDir = '',
     cache = true,
-    install,
+    installFn,
   }: InstallerOptions) {
     if (typeof filename === 'string') {
       this.filename = (version) => fmt.sprintf(filename, version)
@@ -157,8 +157,10 @@ export class Installer implements InstallerOptions {
 
     this.cache = cache
 
-    this.#install =
-      typeof install === 'string' ? getJsFn(install) : Promise.resolve(install)
+    this.#installFn =
+      typeof installFn === 'string'
+        ? getJsFn(installFn)
+        : Promise.resolve(installFn)
   }
 
   /**
@@ -260,8 +262,8 @@ export class Installer implements InstallerOptions {
     dir?: string
   ) {
     const options: InstallerOptions = { ...config }
-    if (typeof options.install === 'string') {
-      options.install = await getJsFn(options.install, dir)
+    if (typeof options.installFn === 'string') {
+      options.installFn = await getJsFn(options.installFn, dir)
     }
     return options
   }
@@ -338,7 +340,7 @@ export class Installer implements InstallerOptions {
    * @param download Whether to download the tool version if not downloaded.
    */
   async install(version?: string, download = true) {
-    if (!this.#install) {
+    if (!this.#installFn) {
       throw new Error('installFn undefined')
     }
 
@@ -351,14 +353,14 @@ export class Installer implements InstallerOptions {
 
     const previousFile = this.downloadedFile(version)
     if (existsSync(previousFile)) {
-      return (await this.#install)(previousFile)
+      return (await this.#installFn)(previousFile)
     } else if (!download) {
       throw new Error(`${version} could not be found`)
     }
 
     const downloadedFile = await this.download(version)
     if (downloadedFile) {
-      return (await this.#install)(downloadedFile)
+      return (await this.#installFn)(downloadedFile)
     }
 
     throw new Error(`could not download and install ${version}`)

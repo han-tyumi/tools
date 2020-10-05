@@ -5,7 +5,8 @@
     "code",
     "cli",
     "config",
-    "module"
+    "module",
+    "readme"
   ],
   "deno.import_intellisense_autodiscovery": false
 }
