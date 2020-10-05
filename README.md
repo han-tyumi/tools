@@ -32,6 +32,10 @@ If no version is provided, the latest downloaded version is used.
 tools install --tool example 1.2.3
 ```
 
+##### --offline [offline:boolean]
+
+Whether to skip downloading a tool version if it is not found.
+
 #### download \<versions...:string>
 
 Downloads the specified tool versions.
