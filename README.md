@@ -12,7 +12,7 @@ deno --unstable install -An tools https://github.com/han-tyumi/tools/raw/master/
 
 All [configuration file](#configuration) options are supported by the CLI and will override any options provided by the `tool` global option.
 
-#### --tool <tool:string>
+#### --tool \<tool:string>
 
 The name of the tool configuration to use from a [configuration file](#configuration).
 
@@ -32,7 +32,7 @@ If no version is provided, the latest downloaded version is used.
 tools install --tool example 1.2.3
 ```
 
-#### download <versions...:string>
+#### download \<versions...:string>
 
 Downloads the specified tool versions.
 
