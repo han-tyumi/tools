@@ -18,7 +18,7 @@ export async function getJsFn(identifier: string, dir = Deno.cwd()) {
     file = path.join(dir, file)
   }
 
-  const install = (await import(file))[name]
+  const install = (await import(`file://${file}`))[name]
   const installType = typeof install
   if (installType !== 'function') {
     throw new Error(`${file} ${name} export is ${installType}`)

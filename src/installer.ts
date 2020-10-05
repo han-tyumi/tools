@@ -237,7 +237,7 @@ export class Installer implements InstallerOptions {
   }
 
   private static async _parseJsFile(file: string) {
-    const mod = await import(file)
+    const mod = await import(`file://${file}`)
     const toolOptions = (mod.default ? mod.default : mod) as Record<
       string,
       InstallerOptions
