@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/han-tyumi/tools/compare/0.2.2...0.2.3) (2020-10-17)
+
+
+### Features
+
+* **cli:** :sparkles: add install offline option ([ac752f9](https://github.com/han-tyumi/tools/commit/ac752f90527308549e7af1bd63777bb5d4c91f44))
+* **cli:** :sparkles: add latest command ([f42d4c6](https://github.com/han-tyumi/tools/commit/f42d4c665bfa126c156542cb67e5723fabb15a25))
+* **cli:** :sparkles: support downloading multiple versions ([79d4dfe](https://github.com/han-tyumi/tools/commit/79d4dfe75b6f4d255a298c778c89fb2a57cb23bf))
+* **installer:** :art: update download cache message ([c97cd5f](https://github.com/han-tyumi/tools/commit/c97cd5f927f17c1a0b302d53ec5d29224025a050))
+* **installer:** :sparkles: handle bad responses ([730e074](https://github.com/han-tyumi/tools/commit/730e0740fbec990ba68df4b71d1638cde11b6010))
+* **installer:** :sparkles: support installing the latest by default ([f670fff](https://github.com/han-tyumi/tools/commit/f670fffe1297c35d855808a6757ad34d0ac5bec3))
+* **installer:** :sparkles: support version format ([a73b1a2](https://github.com/han-tyumi/tools/commit/a73b1a2c69d05ca8da3466944b0a38e75ad7b0d5))
+
+
+### Bug Fixes
+
+* **installer:** :bug: determine regex before creating version function ([978182a](https://github.com/han-tyumi/tools/commit/978182aa1d0d604754a0ff526888bb50861e44cc))
+* **installer:** :bug: update dynamic TS/JS imports ([d5ec7ef](https://github.com/han-tyumi/tools/commit/d5ec7efe1c3ca59c6070f7e7d833c5a238885ec1))
+* **module:** :bug: remove mainDir ([cd10f84](https://github.com/han-tyumi/tools/commit/cd10f84398489ec2b6d174166fe928cbc513aa75))
+
 ### [0.2.2](https://github.com/han-tyumi/tools/compare/0.2.1...0.2.2) (2020-10-04)
 
 
