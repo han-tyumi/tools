@@ -180,7 +180,7 @@ export class Installer implements InstallerOptions {
       if (cache && this._cache) {
         options = (await this._cache).get(tool)
       } else {
-        options = (await this.options(cache)).get(tool)
+        options = (await this.options(cache))?.get(tool)
       }
     }
 
@@ -208,7 +208,7 @@ export class Installer implements InstallerOptions {
 
     const config = this._findConfig()
     if (!config) {
-      throw new Error(`could not find ${this._basename} configuration file`)
+      return
     }
 
     const { dir, ext, file } = config

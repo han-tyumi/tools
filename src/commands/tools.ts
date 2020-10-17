@@ -16,7 +16,9 @@ export const toolsCommand = new Command()
   .version('0.2.2')
   .description('CLI for downloading and installing your tools')
 
-  .complete('tool', () => Array.from(installerOptions.keys()))
+  .complete('tool', () =>
+    installerOptions ? Array.from(installerOptions.keys()) : []
+  )
 
   .option(
     '--tool <tool:string:tool>',
