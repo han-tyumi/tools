@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/han-tyumi/tools/compare/0.2.3...0.2.4) (2020-10-17)
+
+
+### Bug Fixes
+
+* **installer:** :bug: allow CLI usage without config ([953cfdf](https://github.com/han-tyumi/tools/commit/953cfdf45b6e588041970ad98af5f803d63478ec))
+
 ### [0.2.3](https://github.com/han-tyumi/tools/compare/0.2.2...0.2.3) (2020-10-17)
 
 
